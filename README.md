@@ -16,6 +16,16 @@ Esta es una aplicación web creada con **Streamlit** que se conecta a la API de 
 * [Spotify Web API](https://developer.spotify.com/documentation/web-api) (Datos musicales)
 * [Requests](https://requests.readthedocs.io/) (Peticiones HTTP)
 
+## Fases
+* Fase 1 (Completada ✅): Diseño visual, conexión manual con Token y lista de Tops.
+* Fase 2 (Próxima 🔜): Conexión oficial (OAuth2) y automatización para que no caduque el token.
+* Fase 3 (Creativa 🚀): Análisis de "Audio Features" (gráficos de energía/baile) y generador de Playlists.
+* Fase 4 (Inteligencia Artificial 🧠): * Music Mood Analyzer: Integración con la API de OpenAI/Gemini para generar un perfil psicológico basado en tus gustos.
+
+Smart Recommendations: Sistema de recomendación inteligente que predice tu próximo "vicio" musical mediante modelos de clasificación.
+
+Generación de Prompts: Creación de descripciones creativas para tus nuevas listas de reproducción basadas en el análisis de letras y ritmos.
+
 ## 🚀 Cómo ejecutarlo localmente
 1. Clona este repositorio.
 2. Asegúrate de tener instalado Python.
