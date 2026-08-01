@@ -1,8 +1,52 @@
-#Grafico no funciona porque el token no lo permite.
-
 import streamlit as st
 import requests
-from graficos import mostrar_analisis_radar
+from graficos import generar_radar_vibes
+import os 
+from dotenv import load_dotenv
+from ia_analisis import generar_perfil_psicologico
+
+
+
+#Carga de configuracion y llaves. 
+load_dotenv() # Carga el archivo .env
+
+api_key = os.getenv("LASTFM_API_KEY")
+api_secret = os.getenv("LASTFM_SHARED_SECRET")
+
+if api_key:
+    print(f"Llave de Last.fm cargada correctamente: {api_key[:5]}...")
+
+def obtener_vibras_cancion(artista, cancion):
+    # 1. Lista de etiquetas que NO queremos (porque confunden al radar)
+    lista_negra = [
+        "eurovision", "ukrainian", "bielorrusia", "belarus", 
+        "spotify", "all", "unknown vibe", "musical energy",
+        "female vocalists", "seen live"
+    ]
+    
+    nombre_limpio = cancion.split('(')[0].strip()
+    url = "http://ws.audioscrobbler.com/2.0/"
+    
+    try:
+        #Lógica de búsqueda 
+        res = requests.get(url, params={"method": "track.gettoptags", "artist": artista, "track": nombre_limpio, "api_key": api_key, "format": "json"})
+        tags = [t['name'].lower() for t in res.json().get('toptags', {}).get('tag', [])]
+        
+        if not tags:
+            res_art = requests.get(url, params={"method": "artist.gettoptags", "artist": artista, "api_key": api_key, "format": "json"})
+            tags = [t['name'].lower() for t in res_art.json().get('toptags', {}).get('tag', [])]
+
+        # 2. APLICAMOS EL FILTRO: Solo dejamos las que NO están en la lista negra
+        tags_filtrados = [t for t in tags if t not in lista_negra][:5]
+        
+        # 3. PLAN C: Si después de filtrar se queda vacío, ponemos algo genérico
+        if not tags_filtrados:
+            return ["pop", "latin"]
+            
+        return tags_filtrados
+        
+    except:
+        return ["pop"]
 
 # 1. Configuración de página
 st.set_page_config(page_title="Mi Spotify Stats", page_icon="🎧")
@@ -30,11 +74,28 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+st.markdown("""
+    <style>
+    /* Forzamos TODO el texto dentro de la caja a ser blanco puro */
+    .veredicto-final, .veredicto-final p, .veredicto-final li, .veredicto-final span, .veredicto-final div {
+        color: #FFFFFF !important;
+        background-color: transparent !important;
+    }
+    .veredicto-box-container {
+        background-color: #282828 !important;
+        padding: 25px;
+        border-radius: 15px;
+        border-left: 5px solid #1DB954;
+        margin-top: 20px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.title("🎧 Mis Estadísticas de Spotify")
 st.write("Configura el periodo para ver tu propio Wrapped.")
 
 # Tu TOKEN actual
-TOKEN = "BQDmTnzZebFI7JgQT3S-5LHlFbONvR5w0oGGi0z5bkW3Kz5h_xyggtVxjGsBM0j1K9z4hNWIyFXUFA5nvNDZBwOH6imZFEum2A3tTRoLvbgB2bHy6CzwrZauysyjm1HElXtLHJvQa3C5M34nYZ5IFU3R0mbWB-_D3SLWknAmVJ1RR8t1hqtfbrX7zKdFwUf-AbSbT6Pa8_YD3LxFQ2146cRfWR1nJuZ51yKeMnPBbl5eSXQAjh27-ZuAqhASOf9pzqvJg_YOEjtNq3ryE8qfi4V4IjJ4ltTiRZmS3nfiFbkgJSSWvoxevmaLqFS8JSpHRjFeCSDxBWv9yBaBQRLh2qzawkincbNxjOIlToS-9XbIvV7nH1rW_7mzKi0rReYknw"
+TOKEN = "BQAdFdaBUJa_SXH4kKNHo1t-eyOAxxZXOm9zvhJp1R14TFrtc-XQwaT3658pMu1IHAMpgEuwvY-UDAhYkUTCk2ynvXkSOmz-ogE1-9aav4IebV8N6NNU2INF5YdZ75ojukyWerWQtuvmJ0isPDqyB5g8lfzHC3gbq2KVetKHSqajzvrnyUeMdB9Eyd3brb4-8ytQBvkhrINlqi1UZZ9-gv1bZzG1H4QWvXOfNzM8VByHYPScGarJHX08pGYYa6zv3lZO7YNNdVJgIBu9T3rU4imdGsS9J602Yu3TLLEA1SKJFQ"
 
 headers = {"Authorization": f"Bearer {TOKEN}"}
 
@@ -67,34 +128,76 @@ if st.button("Actualizar datos"):
                 img = item['album']['images'][0]['url']
                 url_spotify = item['external_urls']['spotify']
                 
+                # --- NUEVA LÓGICA: Obtener Tags de Last.fm ---
+                vibras = obtener_vibras_cancion(artista, nombre)
+                
                 col1, col2, col3 = st.columns([1, 3, 1])
-                with col1: st.image(img, width=65)
+                with col1: 
+                    st.image(img, width=65)
                 with col2:
                     st.markdown(f"**{i}. {nombre}**")
                     st.markdown(f"*{artista}*")
-                with col3: st.link_button("Play", url_spotify)
+                    # Mostramos las etiquetas si existen
+                    if vibras:
+                        st.caption(f"✨ Vibes: {', '.join(vibras)}")
+                with col3: 
+                    st.link_button("Play", url_spotify)
             else:
                 col1, col2 = st.columns([1, 4])
                 with col1:
-                    if item['images']: st.image(item['images'][0]['url'], width=65)
-                with col2: st.markdown(f"### {i}. {nombre}")
+                    if item['images']: 
+                        st.image(item['images'][0]['url'], width=65)
+                with col2: 
+                    st.markdown(f"### {i}. {nombre}")
 
-        # --- FASE 3: ANÁLISIS DE AUDIO (Solo si eliges canciones) ---
-        if tipo == "tracks":
-            st.divider()
-            # 1. Extraer los IDs
-            ids = [t['id'] for t in datos['items']]
-            ids_string = ",".join(ids)
-            
-            # 2. Consultar Audio Features
-            url_feat = f"https://api.spotify.com/v1/audio-features?ids={ids_string}"
-            res_feat = requests.get(url_feat, headers=headers)
-            
-            if res_feat.status_code == 200:
-                features_list = res_feat.json()['audio_features']
-                # 3. Llamar a la función del otro archivo
-                mostrar_analisis_radar(features_list)
+       # --- FASE 3: RECOLECCIÓN DE DATOS (Canciones + Vibras) ---
+        st.divider()
+        st.subheader("📊 Tu Análisis de Estilo")
+        
+        todas_las_vibras = []
+        lista_canciones_para_ia = [] # Nueva lista para guardar "Canción - Artista"
+
+        for item in datos["items"]:
+            # 1. Adaptamos la extracción según si es artista o canción
+            if tipo == "tracks":
+                nombre = item["name"]
+                artista = item["artists"][0]["name"]
+                lista_canciones_para_ia.append(f"{nombre} de {artista}")
+                # Para las canciones buscamos las vibras de la canción
+                vibras = obtener_vibras_cancion(artista, nombre)
             else:
-                st.warning("No se pudo cargar el análisis detallado. Revisa los permisos del token.")
+                # Si es un artista, el nombre ya es el artista directamente
+                artista = item["name"]
+                lista_canciones_para_ia.append(f"Artista: {artista}")
+                # Para artistas podemos pedir directamente los tags de Last.fm usando solo el nombre del artista
+                vibras = obtener_vibras_cancion(artista, "")
+
+            todas_las_vibras.extend(vibras)
+        
+        # Generamos y mostramos el radar (usa etiquetas)
+        if todas_las_vibras:
+            figura = generar_radar_vibes(todas_las_vibras)
+            st.plotly_chart(figura, use_container_width=True)
+            st.info("💡 Este radar analiza los ritmos y géneros detectados en Last.fm.")
+        
+        # --- FASE 4: EL VEREDICTO FINAL ---
+        st.divider()
+        st.subheader("🤖 El Veredicto de tu ADN Musical")
+        
+        if tipo == "tracks":
+            lista_nombres_limpios = [
+                f"{item['name']} de {item['artists'][0]['name']}"
+                for item in datos["items"]
+            ]
+        else:
+            lista_nombres_limpios = [item["name"] for item in datos["items"]]
+
+        texto_para_ia = ". ".join(lista_nombres_limpios)
+        
+        with st.spinner("Limpiando los datos y analizando..."):
+            perfil = generar_perfil_psicologico(texto_para_ia)
+            
+            # Usamos una sola clase limpia para que el CSS de arriba funcione
+            st.markdown(f'<div class="veredicto-box">{perfil}</div>', unsafe_allow_html=True)
     else:
         st.error("El token ha caducado. Por favor, genera uno nuevo en Spotify for Developers.")

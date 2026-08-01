@@ -47,6 +47,6 @@ Este proyecto es un ejemplo de **adaptación ante cambios de infraestructura**. 
 ## 📈 Roadmap
 
 * **Fase 1:** Diseño visual y conexión manual. ✅
-* **Fase 2:** Integración con Last.fm para evitar muros de pago de Spotify. 🔜
-* **Fase 3:** Visualización avanzada de "Vibes" mediante gráficos de radar. 🔜
+* **Fase 2:** Integración con Last.fm para evitar muros de pago de Spotify. ✅
+* **Fase 3:** Visualización avanzada de "Vibes" mediante gráficos de radar. ✅
 * **Fase 4:** Music Mood Analyzer e Inteligencia Artificial aplicada. 🚀
