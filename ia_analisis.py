@@ -8,16 +8,13 @@ load_dotenv()
 api_key = os.getenv("GSK_API_KEY")
 
 def generar_perfil_psicologico(lista_vibras):
-    
     url = "https://api.groq.com/openai/v1/chat/completions"
-    
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
     vibras_texto = ", ".join(lista_vibras)
-    
     data = {
         "model": "llama-3.1-8b-instant",
         "messages": [
